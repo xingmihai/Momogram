@@ -183,6 +183,8 @@
     <string name="PatchAndCleanupLinksDesc">ex. 为所有 Twitter 相关域名使用 twitter.com 及清除一部分追踪来源的参数</string>
     <string name="PatchAndCleanupLinks">清理对话中的链接</string>
     <string name="RemovePremiumAnnoyance">移除更多烦人的 Premium 宣传</string>
+    <string name="LocalPremium">本地 Premium 状态</string>
+    <string name="LocalPremiumDesc">仅在本地伪装为 Telegram Premium，服务端权益不会生效</string>
     <string name="OverrideSettingBoolean">修改布林值</string>
     <string name="OverrideSettings">修改全局键值对应关系 (非专业人士请勿使用)</string>
     <string name="CustomSearchEngine">自定义搜索引擎</string>

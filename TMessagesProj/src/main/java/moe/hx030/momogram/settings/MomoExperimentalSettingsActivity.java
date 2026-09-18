@@ -108,6 +108,7 @@ public class MomoExperimentalSettingsActivity extends MomoSettingsBaseActivity {
     private final AbstractConfigCell fasterReconnectHackRow = cellGroup.appendCell(new ConfigCellTextCheck(MomoConfig.fasterReconnectHack, LocaleController.getString(R.string.FasterReconnectHackAbout)));
     private final AbstractConfigCell showQuickReconnectRow = cellGroup.appendCell(new ConfigCellTextCheck(MomoConfig.showQuickReconnect, LocaleController.getString(R.string.ShowQuickReconnectDesc)));
     private final AbstractConfigCell removePremiumAnnoyanceRow = cellGroup.appendCell(new ConfigCellTextCheck(MomoConfig.removePremiumAnnoyance, LocaleController.getString(R.string.RemovePremiumAnnoyanceDesc)));
+    private final AbstractConfigCell localPremiumRow = cellGroup.appendCell(new ConfigCellTextCheck(MomoConfig.localPremium, LocaleController.getString(R.string.LocalPremiumDesc)));
     private final AbstractConfigCell chatListFontSizeFollowChatRow = cellGroup.appendCell(new ConfigCellTextCheck(MomoConfig.chatListFontSizeFollowChat));
     private final AbstractConfigCell alwaysDestroyPhotoViewerRow = cellGroup.appendCell(new ConfigCellTextCheck(MomoConfig.alwaysDestroyPhotoViewer));
     private final AbstractConfigCell autoRestartOnLeakRow = cellGroup.appendCell(new ConfigCellTextCheck(MomoConfig.autoRestartOnLeak, LocaleController.getString(R.string.AutoRestartOnLeakInfo)));

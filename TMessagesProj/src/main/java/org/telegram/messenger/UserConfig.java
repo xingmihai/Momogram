@@ -20,6 +20,8 @@ import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
 
+import moe.hx030.momogram.MomoConfig;
+
 import java.util.Arrays;
 
 public class UserConfig extends BaseController {
@@ -585,6 +587,9 @@ public class UserConfig extends BaseController {
     }
 
     public boolean isPremium() {
+        if (MomoConfig.localPremium.Bool()) {
+            return true;
+        }
         TLRPC.User user = currentUser;
         if (user == null) {
             return false;

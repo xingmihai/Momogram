@@ -391,6 +391,7 @@ public class MomoConfig {
     public static ConfigItem enhancedFileLoader = addConfig(R.string.enhancedFileLoader, "enhancedFileLoader", configTypeBool, EXPERIMENTAL, false);
     public static ConfigItem fasterReconnectHack = addConfig(R.string.FasterReconnectHack, "FasterReconnectHack", ConfigItem.configTypeBool, EXPERIMENTAL, false);
     public static ConfigItem removePremiumAnnoyance = addConfig(R.string.RemovePremiumAnnoyance, "RemovePremiumAnnoyance", configTypeBool, EXPERIMENTAL, false);
+    public static ConfigItem localPremium = addConfig(R.string.LocalPremium, "localPremium", configTypeBool, EXPERIMENTAL, false);
     public static ConfigItem overrideSettingBoolean = addConfig(R.string.OverrideSettingBoolean, "OverrideSettingBoolean", configTypeString, EXPERIMENTAL, "");
     public static ConfigItem overrideSettingInteger = addConfig(R.string.OverrideSettingInteger, "OverrideSettingInteger", configTypeString, EXPERIMENTAL, "");
     public static ConfigItem overrideSettingString = addConfig(R.string.OverrideSettingString, "OverrideSettingString", configTypeString, EXPERIMENTAL, "");

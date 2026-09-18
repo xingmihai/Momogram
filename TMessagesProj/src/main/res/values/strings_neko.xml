@@ -193,6 +193,8 @@
     <string name="NoTextToTranslate">No text to translate for this message :(</string>
     <string name="RemovePremiumAnnoyance">Remove some more premium promoting annoyance</string>
     <string name="RemovePremiumAnnoyanceDesc">And blocks premium preview from being shown</string>
+    <string name="LocalPremium">Force local premium status</string>
+    <string name="LocalPremiumDesc">Pretend to have Telegram Premium locally, server-side benefits do NOT apply</string>
     <string name="NoStarsForReaction">No (enough) stars in your account, but you could still enjoy the visual effect :)</string>
     <string name="ShowEditTimestampInPopupMenu">Show edit timestamp in popup menu</string>
     <string name="ShowForwardTimestampInPopupMenu">Show forward timestamp in popup menu</string>
