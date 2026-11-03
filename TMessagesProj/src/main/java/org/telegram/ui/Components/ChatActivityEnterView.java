@@ -11344,10 +11344,10 @@ public class ChatActivityEnterView extends FrameLayout implements
 
             AlertDialog.Builder dialog = new AlertDialog.Builder(this.getContext());
             dialog.setMessage(LocaleController.getString(R.string.ConfirmToSendCommand));
-            dialog.setPositiveButton(LocaleController.getString(android.R.string.ok), (dialog1, which) -> {
+            dialog.setPositiveButton(LocaleController.getString(R.string.OK), (dialog1, which) -> {
                 SendMessagesHelper.getInstance(currentAccount).sendMessage(sendMessageParams);
             });
-            dialog.setNegativeButton(LocaleController.getString(android.R.string.cancel), null);
+            dialog.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
             Dialog dialogFinal = dialog.create();
             dialogFinal.setCanceledOnTouchOutside(true);
             dialogFinal.show();
