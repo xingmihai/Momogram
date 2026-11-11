@@ -192,6 +192,21 @@ jobs:
               touch "TMessagesProj_Modules/media3/libraries/$d/proguard-rules.txt" || true
             done
           fi
+          # Force a genuinely single-ABI APK. The repo's splits block is only
+          # entered when NATIVE_TARGET is blank; narrowing its include list
+          # makes AGP emit one APK and filter ALL jniLibs (including the
+          # maplibre / tflite .so files shipped inside third-party AARs) down
+          # to arm64-v8a. Keep arm64-only in src/main/libs is a second guard.
+          python3 - <<'PY'
+          p = 'TMessagesProj/build.gradle'
+          s = open(p, encoding='utf-8').read()
+          old = "include 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'"
+          new = "include 'arm64-v8a'"
+          assert s.count(old) == 1, 'unexpected splits include list'
+          open(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))
+          print('splits include ->', new)
+          PY
+          grep -n "include 'arm64-v8a'" TMessagesProj/build.gradle
 
       - name: Gradle cache
         uses: actions/cache@v4
@@ -202,8 +217,10 @@ jobs:
       - name: Assemble single-ABI APK
         run: |
           set -e
-          # NATIVE_TARGET in {arm64-v8a,...} disables ABI splits -> one APK.
-          export NATIVE_TARGET="$ABI"
+          # NATIVE_TARGET must stay blank so the repo's splits block is active.
+          # With its include list narrowed to arm64-v8a above, AGP produces
+          # exactly one APK containing only arm64-v8a native libs.
+          unset NATIVE_TARGET
           echo "--- available assemble tasks ---"
           ./gradlew TMessagesProj:tasks --all --no-daemon 2>/dev/null | grep -E '^assemble' || true
           # MiniRelease / FullRelease product flavors no longer exist on this
