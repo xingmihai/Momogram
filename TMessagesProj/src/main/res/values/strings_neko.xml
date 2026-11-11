@@ -316,4 +316,30 @@
     <string name="AllowBotInDirectShare">Allow bots as direct share target</string>
     <string name="AllowTestingUpdate">Check for testing builds when looking for updates</string>
     <string name="enhancedFileLoaderWarning">This may have negative effect on actual download speed, especially when not on a premium account, proceed?</string>
+    <string name="VlessTitle">VLESS Proxy</string>
+    <string name="VlessProxyType">VLESS / REALITY</string>
+    <string name="VlessStandardProxy">SOCKS5 / MTProto</string>
+    <string name="VlessChooseType">Add proxy</string>
+    <string name="VlessCancel">Cancel</string>
+    <string name="VlessAdd">Add VLESS node</string>
+    <string name="VlessAddHint">Paste a vless:// share link</string>
+    <string name="VlessInvalid">Invalid VLESS link</string>
+    <string name="VlessAdded">VLESS node saved</string>
+    <string name="VlessSavedList">Saved nodes</string>
+    <string name="VlessEmpty">No VLESS nodes yet. Tap the button above to add one.</string>
+    <string name="VlessStatusRunning">Local VLESS bridge is running. Telegram traffic goes through:</string>
+    <string name="VlessStatusStopped">Local VLESS bridge is stopped.</string>
+    <string name="VlessEnable">Enable</string>
+    <string name="VlessEnabledOk">VLESS enabled, proxy switched to the local bridge</string>
+    <string name="VlessDisable">Disable VLESS</string>
+    <string name="VlessDisabledOk">VLESS disabled</string>
+    <string name="VlessDelete">Delete</string>
+    <string name="VlessConfirmDelete">Delete this VLESS node?</string>
+    <string name="VlessDeleted">VLESS node deleted</string>
+    <string name="VlessCopyLink">Copy vless:// link</string>
+    <string name="VlessExportConfig">Export sing-box config</string>
+    <string name="VlessShare">Share</string>
+    <string name="VlessCopied">Copied to clipboard</string>
+    <string name="VlessUnsupportedTitle">Not supported by the built-in stack</string>
+    <string name="VlessAbout">Built-in VLESS stack: pure Java, no native core. Supports vless:// with tcp / ws and security=none / tls. REALITY (uTLS fingerprint) and XTLS Vision require an external core - use Export sing-box config with v2rayNG / NekoBox. Server-side Premium features and other server-enforced behaviour are unaffected.</string>
 </resources>

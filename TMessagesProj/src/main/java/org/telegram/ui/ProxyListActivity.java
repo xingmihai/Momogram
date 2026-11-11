@@ -74,6 +74,8 @@ import java.util.Collections;
 import java.util.List;
 
 import moe.hx030.momogram.utils.UIUtil;
+import moe.hx030.momogram.vless.VlessBridge;
+import moe.hx030.momogram.vless.VlessProxyActivity;
 
 public class ProxyListActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
     private final static boolean IS_PROXY_ROTATION_AVAILABLE = true;
@@ -361,6 +363,9 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
 
     @Override
     public View createView(Context context) {
+        // Restore the local VLESS bridge after a process restart. tgnet already
+        // reads the persisted 127.0.0.1 SOCKS5 settings from SharedPreferences.
+        VlessBridge.ensureStarted(context);
         actionBar.setBackButtonDrawable(new BackDrawable(false));
         actionBar.setAllowOverlayTitle(true);
         actionBar.setTitle(getString(R.string.ProxySettings));
@@ -467,7 +472,21 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 }
                 ConnectionsManager.setProxySettings(useProxySettings, SharedConfig.currentProxy.settings);
             } else if (position == proxyAddRow) {
-                presentFragment(new ProxySettingsActivity());
+                CharSequence[] addTypes = new CharSequence[]{
+                        getString(R.string.VlessStandardProxy),
+                        getString(R.string.VlessProxyType)
+                };
+                new android.app.AlertDialog.Builder(getParentActivity())
+                        .setTitle(getString(R.string.VlessChooseType))
+                        .setItems(addTypes, (dialog, which) -> {
+                            if (which == 0) {
+                                presentFragment(new ProxySettingsActivity());
+                            } else {
+                                presentFragment(new VlessProxyActivity());
+                            }
+                        })
+                        .setNegativeButton(getString(R.string.VlessCancel), null)
+                        .show();
             } else if (position == deleteAllRow) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
                 builder.setMessage(getString(R.string.DeleteAllProxiesConfirm));

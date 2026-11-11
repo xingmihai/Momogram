@@ -43,6 +43,9 @@ object ProxyUtil {
 
     @JvmStatic
     fun importProxy(ctx: Activity, link: String): Boolean {
+        if (link.startsWith("vless://", ignoreCase = true)) {
+            return moe.hx030.momogram.vless.VlessProxyActivity.importLink(ctx, link)
+        }
         runCatching {
             val settings = ProxySettings.fromUri(Uri.parse(link)) ?: return false
             if (!settings.isValid) return false

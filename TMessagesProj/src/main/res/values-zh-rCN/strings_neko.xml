@@ -316,4 +316,30 @@
     <string name="EnableUnifiedPush">启用 UnifiedPush</string>
     <string name="AllowTestingUpdate">允许接收测试版更新</string>
     <string name="enhancedFileLoaderWarning">本功能可能导致实际下载速度变得更慢, 对非高级用户帐号更是如此, 是否确认开启?</string>
+    <string name="VlessTitle">VLESS 代理</string>
+    <string name="VlessProxyType">VLESS / REALITY</string>
+    <string name="VlessStandardProxy">SOCKS5 / MTProto</string>
+    <string name="VlessChooseType">添加代理</string>
+    <string name="VlessCancel">取消</string>
+    <string name="VlessAdd">添加 VLESS 节点</string>
+    <string name="VlessAddHint">粘贴 vless:// 分享链接</string>
+    <string name="VlessInvalid">VLESS 链接无效</string>
+    <string name="VlessAdded">VLESS 节点已保存</string>
+    <string name="VlessSavedList">已保存的节点</string>
+    <string name="VlessEmpty">还没有 VLESS 节点，点上方按钮添加。</string>
+    <string name="VlessStatusRunning">本地 VLESS 桥正在运行，Telegram 流量经由：</string>
+    <string name="VlessStatusStopped">本地 VLESS 桥未运行。</string>
+    <string name="VlessEnable">启用</string>
+    <string name="VlessEnabledOk">VLESS 已启用，代理已切到本地桥</string>
+    <string name="VlessDisable">停用 VLESS</string>
+    <string name="VlessDisabledOk">VLESS 已停用</string>
+    <string name="VlessDelete">删除</string>
+    <string name="VlessConfirmDelete">删除这个 VLESS 节点？</string>
+    <string name="VlessDeleted">VLESS 节点已删除</string>
+    <string name="VlessCopyLink">复制 vless:// 链接</string>
+    <string name="VlessExportConfig">导出 sing-box 配置</string>
+    <string name="VlessShare">分享</string>
+    <string name="VlessCopied">已复制到剪贴板</string>
+    <string name="VlessUnsupportedTitle">内置内核不支持</string>
+    <string name="VlessAbout">内置 VLESS 为纯 Java 实现，不依赖二进制内核：支持 vless:// 的 tcp / ws 传输与 security=none / tls。REALITY（需 uTLS 伪造 ClientHello 指纹）与 XTLS Vision 必须交给外部内核，请用「导出 sing-box 配置」配合 v2rayNG / NekoBox。服务端权益不受客户端影响。</string>
 </resources>
