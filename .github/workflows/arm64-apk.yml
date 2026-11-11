@@ -1,0 +1,179 @@
+# Standalone arm64-v8a APK builder.
+#
+# This workflow is intentionally self-contained: it does NOT reuse or trigger
+# the repository's built-in workflows (debug.yml / release.yml / singbox.yml),
+# which still reference removed submodules (v2ray, ss-rust, ssr-libev) and fail
+# at their "Fetch Status" step. Only one ABI is packaged: arm64-v8a.
+#
+# Native static libs are built once and cached between runs; VLESS changes are
+# pure Java/Kotlin, so a cached libtmessages.so stays valid.
+
+name: Build arm64-v8a APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      rebuild_native:
+        description: 'Set to y to rebuild native libs even on cache hit'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+env:
+  NDK_VERSION: 27.2.12479018
+  CMAKE_VERSION: 3.22.1
+  ABI: arm64-v8a
+
+jobs:
+  build:
+    name: arm64-v8a APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android/sdk/system-images /opt/ghc /usr/local/share/boost || true
+          df -h .
+
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ''
+
+      - name: Install SDK components
+        run: |
+          SDK_MANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -f "$SDK_MANAGER" ]; then
+            SDK_MANAGER=$(find "$ANDROID_HOME" -name sdkmanager | head -n 1)
+          fi
+          yes | "$SDK_MANAGER" --sdk_root="$ANDROID_SDK_ROOT" --install \
+            "platform-tools" "platforms;android-36" "build-tools;36.0.0" \
+            "ndk;${NDK_VERSION}" "cmake;${CMAKE_VERSION}" > /dev/null
+          printf 'sdk.dir=%s\nndk.dir=%s/ndk/%s\n' "$ANDROID_HOME" "$ANDROID_HOME" "$NDK_VERSION" > local.properties
+          cat local.properties
+
+      - name: Install host build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yasm nasm meson ninja-build gperf cmake golang-go
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Rust Android targets
+        run: |
+          . "$HOME/.cargo/env"
+          rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+
+      - name: Fix script permissions
+        run: |
+          chmod +x gradlew run
+          find bin TMessagesProj/jni -name '*.sh' -exec chmod +x {} + || true
+
+      - name: Native libs cache
+        id: native-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            TMessagesProj/jni/prebuild/lib
+            TMessagesProj/jni/third_party/ffmpeg/build
+            TMessagesProj/jni/third_party/ffmpeg/arm64-v8a
+            TMessagesProj/jni/third_party/ffmpeg/armeabi-v7a
+            TMessagesProj/jni/third_party/ffmpeg/x86
+            TMessagesProj/jni/third_party/ffmpeg/x86_64
+            TMessagesProj/jni/third_party/libvpx/build
+            TMessagesProj/jni/third_party/dav1d/build
+            TMessagesProj/jni/third_party/boringssl/build
+            TMessagesProj/jni/td/build
+            TMessagesProj/src/main/libs
+          key: momo-arm64-native-v4-${{ hashFiles('.gitmodules', 'bin/init/libs/*.sh', 'TMessagesProj/jni/prebuild/*.sh', 'TMessagesProj/jni/third_party/*.sh') }}
+
+      - name: Build native static libs
+        if: steps.native-cache.outputs.cache-hit != 'true' || inputs.rebuild_native == 'y'
+        run: |
+          set -e
+          for m in opus libvpx h264 ffmpeg boringssl tlottie wallet-engine tde2e wamr prisma; do
+            echo "===== ./run init libs $m ====="
+            bash ./run init libs "$m"
+          done
+          # The upstream CI applies these patches after restoring its caches.
+          cd TMessagesProj/jni
+          ./patch_boringssl.sh || true
+          cd ../..
+          find TMessagesProj/jni/prebuild/lib -name '*.a' | sort | head -40
+
+      - name: Build libtmessages.so
+        if: steps.native-cache.outputs.cache-hit != 'true' || inputs.rebuild_native == 'y'
+        run: |
+          set -e
+          bash ./run libs native
+          ls -l TMessagesProj/src/main/libs/*/libtmessages*.so
+
+      - name: Keep arm64-v8a only
+        run: |
+          for a in armeabi-v7a x86 x86_64; do
+            rm -rf "TMessagesProj/src/main/libs/$a"
+          done
+          ls -lh TMessagesProj/src/main/libs/arm64-v8a/
+
+      - name: Configure Gradle
+        run: |
+          # Runner memory is smaller than the repository's default jvmargs.
+          sed -i -e 's/16384/6144/g' gradle.properties || true
+          if [ -d TMessagesProj_Modules/media3/libraries ]; then
+            for d in $(ls TMessagesProj_Modules/media3/libraries); do
+              touch "TMessagesProj_Modules/media3/libraries/$d/proguard-rules.txt" || true
+            done
+          fi
+
+      - name: Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle
+          key: gradle-${{ hashFiles('**/*.gradle', '**/*.gradle.kts', 'gradle/wrapper/gradle-wrapper.properties') }}
+
+      - name: Assemble single-ABI APK
+        run: |
+          set -e
+          # NATIVE_TARGET in {arm64-v8a,...} disables ABI splits -> one APK.
+          export NATIVE_TARGET="$ABI"
+          ./gradlew TMessagesProj:assembleMiniRelease --no-daemon --stacktrace
+
+      - name: Collect and verify APK
+        run: |
+          set -e
+          APK=$(find TMessagesProj/build/outputs/apk -type f -name '*.apk' | sort | head -n 1)
+          if [ -z "$APK" ]; then
+            echo "::error::No APK produced"
+            exit 1
+          fi
+          echo "APK=$APK" >> "$GITHUB_ENV"
+          echo "--- packaged native libs ---"
+          unzip -l "$APK" | grep 'lib/.*\.so' || true
+          ABIS=$(unzip -l "$APK" | awk '/lib\/.*\.so/{print $4}' | sed 's|^lib/\([^/]*\)/.*|\1|' | sort -u | tr '\n' ' ')
+          echo "ABIs in APK: $ABIS"
+          case " $ABIS " in
+            *" armeabi-v7a "*|*" x86 "*|*" x86_64 "*) echo "::warning::APK contains non-arm64 ABIs: $ABIS" ;;
+          esac
+          ls -lh "$APK"
+
+      - name: Upload arm64-v8a APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Momogram-arm64-v8a
+          path: ${{ env.APK }}
+          if-no-files-found: error
+          retention-days: 14
