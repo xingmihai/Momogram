@@ -83,10 +83,13 @@ jobs:
           chmod +x gradlew run
           find bin TMessagesProj/jni -name '*.sh' -exec chmod +x {} + || true
 
-      - name: Native libs cache
-        id: native-cache
-        uses: actions/cache@v4
+      # Two separate caches: the .a files are expensive (~33 min) and are saved
+      # immediately, so a later CMake/Gradle failure never forces a rebuild.
+      - name: Restore prebuilt static libs
+        id: prebuilt-cache
+        uses: actions/cache/restore@v4
         with:
+          key: momo-arm64-prebuilt-v5-${{ hashFiles('.gitmodules', 'bin/init/libs/*.sh', 'TMessagesProj/jni/prebuild/*.sh', 'TMessagesProj/jni/third_party/*.sh') }}
           path: |
             TMessagesProj/jni/prebuild/lib
             TMessagesProj/jni/third_party/ffmpeg/build
@@ -98,11 +101,9 @@ jobs:
             TMessagesProj/jni/third_party/dav1d/build
             TMessagesProj/jni/third_party/boringssl/build
             TMessagesProj/jni/td/build
-            TMessagesProj/src/main/libs
-          key: momo-arm64-native-v4-${{ hashFiles('.gitmodules', 'bin/init/libs/*.sh', 'TMessagesProj/jni/prebuild/*.sh', 'TMessagesProj/jni/third_party/*.sh') }}
 
       - name: Build native static libs
-        if: steps.native-cache.outputs.cache-hit != 'true' || inputs.rebuild_native == 'y'
+        if: steps.prebuilt-cache.outputs.cache-hit != 'true' || inputs.rebuild_native == 'y'
         run: |
           set -e
           for m in opus libvpx h264 ffmpeg boringssl tlottie wallet-engine tde2e wamr prisma; do
@@ -115,12 +116,65 @@ jobs:
           cd ../..
           find TMessagesProj/jni/prebuild/lib -name '*.a' | sort | head -40
 
+      - name: Save prebuilt static libs
+        if: ${{ !cancelled() && (steps.prebuilt-cache.outputs.cache-hit != 'true' || inputs.rebuild_native == 'y') }}
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ steps.prebuilt-cache.outputs.cache-primary-key }}
+          path: |
+            TMessagesProj/jni/prebuild/lib
+            TMessagesProj/jni/third_party/ffmpeg/build
+            TMessagesProj/jni/third_party/ffmpeg/arm64-v8a
+            TMessagesProj/jni/third_party/ffmpeg/armeabi-v7a
+            TMessagesProj/jni/third_party/ffmpeg/x86
+            TMessagesProj/jni/third_party/ffmpeg/x86_64
+            TMessagesProj/jni/third_party/libvpx/build
+            TMessagesProj/jni/third_party/dav1d/build
+            TMessagesProj/jni/third_party/boringssl/build
+            TMessagesProj/jni/td/build
+
+      # Momogram's webrtc_voice_engine.cc references
+      # GroupInstanceCustomImpl::customAudioBitrate, which only exists after
+      # this patch is applied to the tgcalls submodule. release.yml does the
+      # same in its native job; without it CMake fails with 4 "no member" errors.
+      - name: Apply tgcalls group-voip bitrate patch
+        run: |
+          set -e
+          cd TMessagesProj/jni/tgcalls
+          P=../patches/tgcalls/0001-PATCH-Custom-group-voip-audio-bitrate.patch
+          H=tgcalls/group/GroupInstanceCustomImpl.h
+          if grep -q "customAudioBitrate" "$H"; then
+            echo "tgcalls patch already applied"
+          elif patch -p1 --forward --dry-run < "$P" > /dev/null 2>&1; then
+            patch -p1 --forward < "$P"
+          else
+            echo "::error::tgcalls patch does not apply cleanly to this submodule revision"
+            patch -p1 --forward --dry-run < "$P" || true
+            exit 1
+          fi
+          grep -n "customAudioBitrate" "$H"
+
+      - name: Restore libtmessages.so
+        id: so-cache
+        uses: actions/cache/restore@v4
+        with:
+          key: momo-arm64-so-v5-${{ github.sha }}
+          restore-keys: momo-arm64-so-v5-
+          path: TMessagesProj/src/main/libs
+
       - name: Build libtmessages.so
-        if: steps.native-cache.outputs.cache-hit != 'true' || inputs.rebuild_native == 'y'
+        if: ${{ steps.so-cache.outputs.cache-matched-key == '' || inputs.rebuild_native == 'y' }}
         run: |
           set -e
           bash ./run libs native
           ls -l TMessagesProj/src/main/libs/*/libtmessages*.so
+
+      - name: Save libtmessages.so
+        if: ${{ !cancelled() && (steps.so-cache.outputs.cache-matched-key == '' || inputs.rebuild_native == 'y') }}
+        uses: actions/cache/save@v4
+        with:
+          key: momo-arm64-so-v5-${{ github.sha }}
+          path: TMessagesProj/src/main/libs
 
       - name: Keep arm64-v8a only
         run: |
