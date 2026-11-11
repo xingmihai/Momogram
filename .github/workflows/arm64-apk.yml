@@ -204,23 +204,38 @@ jobs:
           set -e
           # NATIVE_TARGET in {arm64-v8a,...} disables ABI splits -> one APK.
           export NATIVE_TARGET="$ABI"
-          ./gradlew TMessagesProj:assembleMiniRelease --no-daemon --stacktrace
+          echo "--- available assemble tasks ---"
+          ./gradlew TMessagesProj:tasks --all --no-daemon 2>/dev/null | grep -E '^assemble' || true
+          # MiniRelease / FullRelease product flavors no longer exist on this
+          # branch. release.yml builds the release build type, whose sourceSet
+          # consumes src/main/libs directly and skips externalNativeBuild, so
+          # no second CMake pass is triggered.
+          ./gradlew TMessagesProj:assembleRelease --no-daemon --stacktrace
 
       - name: Collect and verify APK
         run: |
           set -e
-          APK=$(find TMessagesProj/build/outputs/apk -type f -name '*.apk' | sort | head -n 1)
-          if [ -z "$APK" ]; then
+          APKS=$(find TMessagesProj/build/outputs/apk -type f -name '*.apk' | sort)
+          COUNT=$(printf '%s\n' "$APKS" | grep -c . || true)
+          if [ "$COUNT" -eq 0 ]; then
             echo "::error::No APK produced"
             exit 1
           fi
+          if [ "$COUNT" -ne 1 ]; then
+            echo "::error::Expected exactly one APK, got $COUNT:"
+            printf '%s\n' "$APKS"
+            exit 1
+          fi
+          APK=$(printf '%s\n' "$APKS" | head -n 1)
           echo "APK=$APK" >> "$GITHUB_ENV"
           echo "--- packaged native libs ---"
           unzip -l "$APK" | grep 'lib/.*\.so' || true
           ABIS=$(unzip -l "$APK" | awk '/lib\/.*\.so/{print $4}' | sed 's|^lib/\([^/]*\)/.*|\1|' | sort -u | tr '\n' ' ')
           echo "ABIs in APK: $ABIS"
           case " $ABIS " in
-            *" armeabi-v7a "*|*" x86 "*|*" x86_64 "*) echo "::warning::APK contains non-arm64 ABIs: $ABIS" ;;
+            *" armeabi-v7a "*|*" x86 "*|*" x86_64 "*)
+              echo "::error::APK contains non-arm64 ABIs: $ABIS"
+              exit 1 ;;
           esac
           ls -lh "$APK"
 
